@@ -9,7 +9,7 @@ fn main() {
     println!("{:x}", md5::compute(solve()))
 }
 
-fn solve() -> Vec<u8> {
+pub fn solve() -> Vec<u8> {
     let input = hex::decode(INPUT).unwrap();
     let (_, _, output) = single_byte_xor_crack(&input);
     output

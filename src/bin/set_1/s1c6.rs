@@ -3,13 +3,13 @@ use std::ops::RangeInclusive;
 use base64::prelude::*;
 use cryptopals::hamming_distance;
 
-const CIPHERTEXT: &str = include_str!("../../data/set_1_challenge_6");
+const CIPHERTEXT: &str = include_str!("data/challenge_6");
 
 fn main() {
     println!("{:x}", md5::compute(solve()))
 }
 
-fn solve() -> Vec<u8> {
+pub fn solve() -> Vec<u8> {
     let input = BASE64_STANDARD
         .decode(CIPHERTEXT.split_whitespace().collect::<String>())
         .unwrap();

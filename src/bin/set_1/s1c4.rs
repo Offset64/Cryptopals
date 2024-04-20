@@ -1,6 +1,6 @@
 use cryptopals::single_byte_xor_crack;
 
-const INPUT: &str = include_str!("../../data/set_1_challenge_4");
+const INPUT: &str = include_str!("data/challenge_4");
 
 /**
  * A single byte xor was used to encrypt one of the strings in the input
@@ -9,7 +9,7 @@ fn main() {
     println!("{:x}", md5::compute(solve()))
 }
 
-fn solve() -> Vec<u8> {
+pub fn solve() -> Vec<u8> {
     let lines: Vec<Vec<u8>> = INPUT
         .lines()
         .map(|line| hex::decode(line).unwrap())

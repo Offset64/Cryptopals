@@ -1,6 +1,3 @@
-use base64::prelude::*;
-use hex;
-
 pub fn fixed_xor(input_bytes: &[u8], key_bytes: &[u8]) -> Vec<u8> {
     input_bytes
         .iter()
@@ -62,7 +59,8 @@ pub fn hamming_distance(input1: &[u8], input2: &[u8]) -> usize {
 
 #[cfg(test)]
 mod tests {
-
+    use base64::prelude::*;
+    use hex;
     use super::*;
 
     #[test]
