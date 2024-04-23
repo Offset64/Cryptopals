@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 pub fn fixed_xor(input_bytes: &[u8], key_bytes: &[u8]) -> Vec<u8> {
     input_bytes
         .iter()
@@ -49,19 +51,58 @@ pub fn score_text(input: &[u8]) -> i32 {
         .sum()
 }
 
-pub fn hamming_distance(input1: &[u8], input2: &[u8]) -> usize {
+pub fn hamming_distance(input1: &[u8], input2: &[u8]) -> u8 {
     input1
         .iter()
         .zip(input2.iter())
-        .map(|(a, b)| (a ^ b).count_ones() )
-        .sum::<u32>() as usize
+        .map(|(a, b)| (a ^ b).count_ones() as u8)
+        .sum()
+}
+
+pub fn calculate_entropy<'a, I>(input: I) -> f64
+where
+    I: AsRef<[u8]> + IntoIterator<Item = &'a u8>,
+{
+    //build histogram of bytes
+    let mut histogram = [0; 256];
+    for byte in input {
+        histogram[*byte as usize] += 1;
+    }
+    let total_bytes = histogram.iter().sum::<u8>() as f64;
+
+    histogram
+        .iter()
+        .map(|count| {
+            let p = *count as f64 / total_bytes;
+            if p > 0.0 {
+                -p * p.log2()
+            } else {
+                0.0
+            }
+        })
+        .sum()
+}
+
+pub fn minimum_entropy<I, T>(iterable: &[I]) -> &[u8]
+where
+    T: IntoIterator<Item = I>,
+    T::Item: AsRef<[u8]> + IntoIterator,
+{
+    iterable
+        .into_iter()
+        .min_by_key(|l| {
+            let e = calculate_entropy(l.as_ref()) * 100.0;
+            e.round() as i32
+        })
+        .unwrap()
+        .as_ref()
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use base64::prelude::*;
     use hex;
-    use super::*;
 
     #[test]
     fn test_hex_to_base64() {
@@ -105,5 +146,25 @@ mod tests {
         let input2 = "wokka wokka!!!";
         let distance = hamming_distance(input1.as_bytes(), input2.as_bytes());
         assert_eq!(distance, 37);
+    }
+
+    #[test]
+    fn test_calculate_entropy() {
+        //One normal string and 10 random ones.
+        let inputs = vec![
+            b"this is a test",
+            b"hrvtnnaryggtzy",
+            b"ytxnddourbkvwt",
+            b"xpauulrvhaszjr",
+            b"qeagldsrybdxhf",
+            b"rylcfdpjswjxgk",
+            b"ugpqoskjqxtwzp",
+            b"qykgsecsaqeygm",
+            b"dejtsaecglwvjl",
+            b"xbqjtpzlxwxuoh",
+            b"ucuwznveldxkmr",
+        ];
+        let tmp: Vec<&[u8]> = inputs.iter().map(|x| x.as_ref()).collect();
+        assert_eq!(minimum_entropy::<&[u8], Vec<_>>(tmp.as_ref()), b"this is a test");
     }
 }

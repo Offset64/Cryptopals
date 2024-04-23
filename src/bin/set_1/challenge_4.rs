@@ -5,6 +5,7 @@ const INPUT: &str = include_str!("data/challenge_4");
 /**
  * A single byte xor was used to encrypt one of the strings in the input
  */
+#[allow(dead_code)]
 fn main() {
     println!("{:x}", md5::compute(solve()))
 }

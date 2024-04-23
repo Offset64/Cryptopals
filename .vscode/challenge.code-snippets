@@ -18,6 +18,6 @@
 	"New Challenge" :{
 		"scope": "rust",
 		"prefix": "new-challenge",
-		"body": "fn main() {\n    println!(\"{:x}\", md5::compute(solve()))\n}\n\npub fn solve() -> Vec<u8> {\n    todo!()\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n    #[test]\n    fn test_$TM_FILENAME_BASE() {\n        assert_eq!(\n            format!(\"{:?}\", md5::compute(solve())),\n            \"\"\n        );\n    }\n}",
+		"body": "pub fn solve() -> Vec<u8> {\n    todo!()\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n    #[test]\n    fn test_$TM_FILENAME_BASE() {\n        assert_eq!(\n            format!(\"{:?}\", md5::compute(solve())),\n            \"\"\n        );\n    }\n}",
 	}
 }

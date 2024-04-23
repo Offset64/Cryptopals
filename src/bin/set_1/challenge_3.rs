@@ -5,6 +5,7 @@ const INPUT: &str = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783
 /**
  * A single character was used to XOR this string
  */
+#[allow(dead_code)]
 fn main() {
     println!("{:x}", md5::compute(solve()))
 }

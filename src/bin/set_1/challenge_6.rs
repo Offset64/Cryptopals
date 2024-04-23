@@ -4,7 +4,7 @@ use base64::prelude::*;
 use cryptopals::hamming_distance;
 
 const CIPHERTEXT: &str = include_str!("data/challenge_6");
-
+#[allow(dead_code)]
 fn main() {
     println!("{:x}", md5::compute(solve()))
 }
@@ -37,7 +37,7 @@ fn get_key_size(cipher_bytes: &[u8], range: RangeInclusive<usize>) -> usize {
             let distance = cipher_bytes
                 .chunks(key_size)
                 .skip(1)
-                .map(|block| hamming_distance(block, initial_block))
+                .map(|block| hamming_distance(block, initial_block) as usize)
                 .sum::<usize>();
             (distance, key_size)
         })
