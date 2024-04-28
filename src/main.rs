@@ -1,8 +1,6 @@
-mod challenge_3;
-mod challenge_4;
-mod challenge_6;
-mod challenge_7;
-mod challenge_8;
+mod set_1;
+
+use set_1::*;
 fn main() {
     println!("Set 1: Basics");
     println!("----------------");

@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 pub fn fixed_xor(input_bytes: &[u8], key_bytes: &[u8]) -> Vec<u8> {
     input_bytes
         .iter()
@@ -165,6 +163,9 @@ mod tests {
             b"ucuwznveldxkmr",
         ];
         let tmp: Vec<&[u8]> = inputs.iter().map(|x| x.as_ref()).collect();
-        assert_eq!(minimum_entropy::<&[u8], Vec<_>>(tmp.as_ref()), b"this is a test");
+        assert_eq!(
+            minimum_entropy::<&[u8], Vec<_>>(tmp.as_ref()),
+            b"this is a test"
+        );
     }
 }
