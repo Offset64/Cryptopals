@@ -1,3 +1,5 @@
+use openssl::symm::{Cipher, Crypter, Mode};
+
 pub fn fixed_xor(input_bytes: &[u8], key_bytes: &[u8]) -> Vec<u8> {
     input_bytes
         .iter()
@@ -49,11 +51,11 @@ pub fn score_text(input: &[u8]) -> i32 {
         .sum()
 }
 
-pub fn hamming_distance(input1: &[u8], input2: &[u8]) -> u8 {
+pub fn hamming_distance(input1: &[u8], input2: &[u8]) -> u32 {
     input1
         .iter()
         .zip(input2.iter())
-        .map(|(a, b)| (a ^ b).count_ones() as u8)
+        .map(|(a, b)| (a ^ b).count_ones())
         .sum()
 }
 
@@ -96,11 +98,98 @@ where
         .as_ref()
 }
 
+pub fn pad_pkcs7(input: &[u8], block_size: usize) -> Vec<u8> {
+    let required_padding = block_size - (input.len() % block_size);
+    let padding_byte = required_padding as u8;
+    let padding = vec![padding_byte; required_padding];
+    [input, &padding].concat()
+}
+
+pub fn unpad_pkcs7(input: &[u8]) -> Vec<u8> {
+    input[..input.len() - *input.last().unwrap() as usize].to_vec()
+}
+
+pub fn ecb_encrypt(input: &[u8], key: &[u8]) -> Vec<u8> {
+    let cipher = Cipher::aes_128_ecb();
+    let mut crypter = Crypter::new(cipher, Mode::Encrypt, key, None).unwrap();
+    crypter.pad(false);
+
+    let block_size = cipher.block_size();
+    let mut output = vec![0; input.len() + block_size];
+    let mut count = 0;
+
+    for block in input.chunks(block_size) {
+        count += crypter.update(&block, &mut output[count..]).unwrap();
+    }
+    count += crypter.finalize(&mut output[count..]).unwrap();
+    output.truncate(count);
+    output
+}
+
+pub fn ecb_decrypt(input: &[u8], key: &[u8]) -> Vec<u8> {
+    let cipher = Cipher::aes_128_ecb();
+    let mut crypter = Crypter::new(cipher, Mode::Decrypt, key, None).unwrap();
+    crypter.pad(false);
+
+    let block_size = cipher.block_size();
+    let mut output = vec![0; input.len() + block_size];
+    let mut count = 0;
+    for block in input.chunks(block_size) {
+        count += crypter.update(&block, &mut output[count..]).unwrap();
+    }
+    count += crypter.finalize(&mut output[count..]).unwrap();
+    output.truncate(count);
+    output
+}
+
+pub fn cbc_encrypt(input: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
+    let mut output = Vec::new();
+    let mut previous_block = iv.to_vec();
+    let padded_input = pad_pkcs7(input, 16);
+    for block in padded_input.chunks(16) {
+        let xored = fixed_xor(&block, &previous_block);
+        let encrypted = ecb_encrypt(&xored, key);
+        output.extend_from_slice(&encrypted);
+        previous_block = encrypted;
+    }
+    output
+}
+
+pub fn cbc_decrypt(input: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
+    let mut output = Vec::new();
+    let mut previous_block = iv.to_vec();
+    for block in input.chunks(16) {
+        let decrypted = ecb_decrypt(&block, key);
+        let xored = fixed_xor(&decrypted, &previous_block);
+        previous_block = block.to_vec();
+        output.extend_from_slice(&xored);
+    }
+    unpad_pkcs7(&output)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use base64::prelude::*;
     use hex;
+
+    #[test]
+    fn test_cbc_encrypt_decrypt() {
+        let key = b"YELLOW SUBMARINE";
+        let iv = vec![0; 16];
+
+        let input_1 = b"this is a test";
+        let encrypted_1 = cbc_encrypt(input_1, key, &iv);
+        let decrypted_1 = cbc_decrypt(&encrypted_1, key, &iv);
+
+        assert_eq!(input_1, &decrypted_1[..]);
+
+        let input_2 = b"this is a test. it's not a clean multiple of 16 bytes.";
+        let encrypted_2 = cbc_encrypt(input_2, key, &iv);
+        let decrypted_2 = cbc_decrypt(&encrypted_2, key, &iv);
+
+        assert_eq!(input_2, &decrypted_2[..]);
+    }
 
     #[test]
     fn test_hex_to_base64() {
@@ -167,5 +256,15 @@ mod tests {
             minimum_entropy::<&[u8], Vec<_>>(tmp.as_ref()),
             b"this is a test"
         );
+    }
+    #[test]
+    fn test_pad_pkcs7() {
+        let input = b"YELLOW SUBMARINE";
+        let block_size = 20;
+        let output = pad_pkcs7(input, block_size);
+        assert_eq!(output, b"YELLOW SUBMARINE\x04\x04\x04\x04");
+
+        let unpadded = unpad_pkcs7(&output);
+        assert_eq!(unpadded, input);
     }
 }
